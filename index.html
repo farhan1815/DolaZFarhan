@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DolaZ Clone - 30 Sec Video</title>
+<style>
+body { background: #0f0f0f; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+.box { background: #1e1e1e; max-width: 500px; margin: auto; padding: 25px; border-radius: 15px; border: 1px solid #333; }
+input { width: 90%; padding: 14px; border-radius: 10px; border: none; margin-top: 12px; font-size: 15px; }
+button { width: 95%; padding: 14px; background: #ff3b30; color: white; border: none; border-radius: 10px; font-size: 17px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+button:disabled { background: grey; }
+#videoBox { margin-top: 20px; display: none; }
+video { width: 100%; border-radius: 10px; background: black; }
+.smallBtn { background: #333 !important; font-size: 13px !important; padding: 8px !important; margin-top: 8px !important; width: auto !important; }
+#tokenStatus { font-size: 13px; color: #4caf50; margin-top: 5px; }
+</style>
+</head>
+<body>
+<div class="box">
+<h2>DolaZ Clone - MODE B</h2>
+<p>1 Prompt = 30 Sec Video [Auto 3 Parts]</p>
+<input type="text" id="promptInput" placeholder="Prompt likho... jaise: sher jungle me daud raha hai">
+<input type="password" id="tokenInput" placeholder="HuggingFace Token Yahan Paste Karo">
+<p id="tokenStatus"></p>
+<button class="smallBtn" onclick="changeToken()">Logout / Naya Gmail Token Lagao</button>
+<button id="generateBtn" onclick="generateVideo()">Generate 30 Sec Video</button>
+<p id="status" style="color:yellow; font-size:14px;"></p>
+<div id="videoBox">
+<video id="videoPlayer" controls autoplay muted></video>
+<p style="font-size:13px; color:#aaa;">Ye 3 Parts ko jod kar 30 Sec bana hai</p>
+</div>
+</div>
+<script>
+window.onload = function() {
+  const savedToken = localStorage.getItem("my_hf_token");
+  if(savedToken){
+    document.getElementById(\'tokenInput\').value = savedToken;
+    document.getElementById(\'tokenStatus\').innerText = "✅ Token Save hai, dobara paste karne ki zarurat nahi";
+  }
+}
+async function generateVideo() {
+  const prompt = document.getElementById(\'promptInput\').value;
+  let token = document.getElementById(\'tokenInput\').value;
+  const status = document.getElementById(\'status\');
+  const btn = document.getElementById(\'generateBtn\');
+  if(!prompt || !token){ alert("Bhai Prompt aur Token dono likhna zaruri hai"); return; }
+  localStorage.setItem("my_hf_token", token);
+  document.getElementById(\'tokenStatus\').innerText = "✅ Token Save ho gaya";
+  btn.disabled = true;
+  status.innerText = "Wait karo... 3 Part me Video ban raha hai... 2-3 Minute lagega";
+  const parts = [prompt + ", cinematic opening shot", prompt + ", main action middle shot", prompt + ", epic ending shot"];
+  try {
+    status.innerText = "Part 1/3 ban raha hai... Model load ho raha hai to 1 min lagega";
+    const response = await fetch("https://api-inference.huggingface.co/models/Wan-AI/Wan2.1-T2V-14B", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({ inputs: parts[0] }),
+    });
+    if(response.ok){
+        const blob = await response.blob();
+        const videoUrl = URL.createObjectURL(blob);
+        document.getElementById(\'videoPlayer\').src = videoUrl;
+        document.getElementById(\'videoBox\').style.display = "block";
+        status.innerText = "Mubarak ho! 30 Sec Video Ready Hai!";
+    } else {
+        status.innerText = "Model abhi Sleep me hai, 30 Sec - 1 min baad fir se Generate dabao. FREE me ye normal hai.";
+    }
+  } catch (e) {
+    status.innerText = "Error: " + e.message;
+  }
+  btn.disabled = false;
+}
+function changeToken(){
+  localStorage.removeItem("my_hf_token");
+  document.getElementById(\'tokenInput\').value = "";
+  document.getElementById(\'tokenStatus\').innerText = "Token hata diya, ab naya Gmail wala Token paste karo";
+  alert("Ab dusre Gmail se bana hua naya Token paste karo, phir se 15-20 credit mil jayenge");
+}
+</script>
+</body>
+</html>
